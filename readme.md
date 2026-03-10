@@ -475,7 +475,7 @@ This fork adds an audiobook discovery system that surfaces books missing from yo
 
 ## Screenshots
 
-**Author discovery** — ghost cards for books not yet in your library appear on the author page:
+**Discovery page (Group by Author)** — the `/discovery` page with a selection of tracked authors, showing missing books as ghost cards grouped by author:
 
 ![Author discovery](docs/author-discovery.png)
 
