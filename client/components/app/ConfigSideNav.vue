@@ -114,6 +114,11 @@ export default {
           id: 'config-authentication',
           title: this.$strings.HeaderAuthentication,
           path: '/config/authentication'
+        },
+        {
+          id: 'config-discovery',
+          title: 'Discovery',
+          path: '/config/discovery'
         }
       ]
 

@@ -87,6 +87,23 @@ class SeriesController {
   }
 
   /**
+   * PATCH: /api/series/:id/discovery-override
+   * Body: { discoveryOverride: true | false | null }
+   *
+   * @param {SeriesControllerRequest} req
+   * @param {Response} res
+   */
+  async updateDiscoveryOverride(req, res) {
+    const value = req.body.discoveryOverride
+    if (value !== true && value !== false && value !== null) {
+      return res.status(400).send('discoveryOverride must be true, false, or null')
+    }
+    req.series.discoveryOverride = value
+    await req.series.save()
+    res.json({ id: req.series.id, discoveryOverride: req.series.discoveryOverride })
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res

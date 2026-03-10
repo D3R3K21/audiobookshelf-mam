@@ -143,6 +143,9 @@ class Audnexus {
   }
 
   /**
+   * Get all books by author ASIN from Audnexus
+   *
+  /**
    *
    * @param {string} asin
    * @param {string} region

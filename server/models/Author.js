@@ -19,6 +19,8 @@ class Author extends Model {
     this.imagePath
     /** @type {UUIDV4} */
     this.libraryId
+    /** @type {boolean|null} */
+    this.discoveryOverride
     /** @type {Date} */
     this.updatedAt
     /** @type {Date} */
@@ -139,7 +141,12 @@ class Author extends Model {
         lastFirst: DataTypes.STRING,
         asin: DataTypes.STRING,
         description: DataTypes.TEXT,
-        imagePath: DataTypes.STRING
+        imagePath: DataTypes.STRING,
+        discoveryOverride: {
+          type: DataTypes.BOOLEAN,
+          allowNull: true,
+          defaultValue: null
+        }
       },
       {
         sequelize,

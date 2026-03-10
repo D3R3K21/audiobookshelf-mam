@@ -92,6 +92,14 @@
         <div v-show="isPodcastDownloadQueuePage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
+      <nuxt-link v-if="isBookLibrary && userIsAdminOrUp" to="/discovery" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isDiscoveryPage ? 'bg-primary/80' : 'bg-bg/60'">
+        <span class="material-symbols text-2xl">cloud_download</span>
+
+        <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">Discover</p>
+
+        <div v-show="isDiscoveryPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+      </nuxt-link>
+
       <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-error/40 cursor-pointer relative" :class="showingIssues ? 'bg-error/40' : 'bg-error/20'">
         <span class="material-symbols text-2xl">warning</span>
 
@@ -179,6 +187,9 @@ export default {
     },
     isStatsPage() {
       return this.$route.name === 'library-library-stats'
+    },
+    isDiscoveryPage() {
+      return this.$route.name === 'discovery'
     },
     libraryBookshelfPage() {
       return this.$route.name === 'library-library-bookshelf-id'

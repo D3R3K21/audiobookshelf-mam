@@ -16,6 +16,8 @@ class Series extends Model {
     this.description
     /** @type {UUIDV4} */
     this.libraryId
+    /** @type {boolean|null} */
+    this.discoveryOverride
     /** @type {Date} */
     this.createdAt
     /** @type {Date} */
@@ -96,7 +98,12 @@ class Series extends Model {
         },
         name: DataTypes.STRING,
         nameIgnorePrefix: DataTypes.STRING,
-        description: DataTypes.TEXT
+        description: DataTypes.TEXT,
+        discoveryOverride: {
+          type: DataTypes.BOOLEAN,
+          allowNull: true,
+          defaultValue: null
+        }
       },
       {
         sequelize,

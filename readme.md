@@ -450,3 +450,107 @@ If you are using VSCode, this project includes a couple of pre-defined targets t
 # How to Support
 
 [See the incomplete "How to Support" page](https://www.audiobookshelf.org/support)
+
+---
+
+# Book Discovery (fork-specific feature)
+
+This fork adds an audiobook discovery system that surfaces books missing from your library and lets you send them to qBittorrent for download directly from the ABS interface.
+
+## Added features
+
+- **Discovery page** (`/discovery`) — aggregated view of missing books across all tracked authors and series. Group by author or series. Per-user opt-in tracking (stored in the database, syncs across devices).
+- **Author page** — ghost cards for books not yet in your library appear automatically when discovery is enabled for that author.
+- **Series page — missing books strip** — when you open any series, a horizontal strip above the bookshelf shows ghost cards for entries not yet in your library, sorted by series position. Clicking a card opens the MAM search modal pre-populated with the book title and author.
+- **Series page — Rescan & Match button** — a persistent **Rescan** button sits in the action bar above every series bookshelf. Clicking it:
+  1. Triggers a full library scan (`POST /api/libraries/:id/scan`) to pick up any newly downloaded audio files.
+  2. Listens for the scan-complete websocket event (`task_finished` with `action: library-scan`).
+  3. Fetches all items in the current series and runs a targeted `POST /api/items/:id/match` on each one using the Audible provider. Items with an existing ASIN are re-matched by that ASIN (refreshing series sequence and metadata); newly imported items are matched by the ASIN from discovery data (matched by folder name) or by title as a fallback.
+  4. Series sequence/position numbers are always updated to reflect what Audible reports — so books imported without a sequence number get the correct position set automatically.
+  5. The button label cycles through **Scanning…** → **Matching…** → **Rescan** with a spinning icon, giving live feedback throughout.
+- **MAM search modal** — search MyAnonamouse directly from any missing-book card. Results sorted by seeders. Select a torrent to download; choose destination library and folder from dropdowns at the top.
+- **qBittorrent integration** — ABS downloads the `.torrent` file server-side using the MAM session cookie (so auth is handled transparently), writes it to the save path, and submits it to qBittorrent via `file://` URL with `contentLayout=NoSubfolder` to prevent double-nesting.
+- **Audible catalog metadata** — missing books are sourced from the Audible catalog API (`api.audible.com/1.0/catalog/products`), filtered to unabridged English editions only.
+- **Discovery settings page** (`/config/discovery`) — configure Mousehole URL, qBittorrent connection, seed ratio, and category. Includes connection test buttons for both MAM and qBittorrent.
+
+## Prerequisites
+
+| Service | Purpose |
+|---------|---------|
+| [mousehole](https://github.com/tmmrtn/mousehole) | Maintains a valid MAM session cookie over a VPN connection and exposes it via a local HTTP API |
+| [qBittorrent](https://www.qbittorrent.org/) | Torrent client — receives download jobs from ABS |
+| VPN (optional but recommended) | MAM requires whitelisted IPs; route ABS and mousehole through the same VPN |
+
+## Setup
+
+### 1. Build the image
+
+```bash
+git clone <this-repo>
+cd audiobookshelf
+docker build -t audiobookshelf-dev:latest .
+```
+
+### 2. Configure docker-compose
+
+Add the following service (adjust volumes and network to match your setup):
+
+```yaml
+audiobookshelf-dev:
+  image: audiobookshelf-dev:latest
+  container_name: audiobookshelf-dev
+  restart: always
+  # Route through VPN if required by your tracker:
+  # network_mode: service:gluetun
+  environment:
+    - PUID=1000
+    - PGID=1000
+    - TZ=America/New_York
+    # Mousehole provides the MAM session cookie
+    - MOUSEHOLE_URL=http://mousehole:5010
+    # qBittorrent WebUI (must be reachable from this container)
+    - QBT_HOST=localhost         # or qbittorrent container hostname
+    - QBT_PORT=8080
+    - QBT_USERNAME=admin
+    - QBT_PASSWORD=yourpassword
+    - QBT_CATEGORY=mam           # create this category in qBit first
+    - QBT_SEED_RATIO=1.0
+  volumes:
+    - ./config/audiobookshelf:/config
+    - ./config/audiobookshelf/metadata:/metadata
+    # This path MUST match the path mounted in qBittorrent
+    - /path/to/your/audiobooks:/audiobooks
+```
+
+> **Important:** The audiobooks directory must be mounted at the **same container path** (`/audiobooks`) in both the ABS container and the qBittorrent container. ABS creates the save directory and passes `file:///audiobooks/...` to qBit — if qBit doesn't have the same mount it won't find the torrent file.
+
+### 3. Configure qBittorrent
+
+- Mount your audiobooks directory as `/audiobooks` in the qBittorrent container (same path as ABS).
+- Create a category named `mam` (or whatever you set `QBT_CATEGORY` to) in qBittorrent → Options → BitTorrent → Categories, **without** a save path override so that ABS controls where files land.
+
+### 4. Configure mousehole
+
+mousehole must be accessible from the ABS container and must have an active MAM session. Set `MOUSEHOLE_URL` to its address. If both run behind the same VPN container (e.g. gluetun), `http://localhost:5010` works since they share the network namespace.
+
+### 5. Enable discovery in ABS
+
+1. Open **Settings → Discovery** (`/config/discovery`).
+2. Enter your Mousehole URL and click **Test** — it should report the connection status.
+3. Enter your qBittorrent host/port/credentials and click **Test**.
+4. Toggle **Discovery Enabled** on.
+5. Navigate to the **Discovery** page, select authors or series to track, and missing books will appear.
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MOUSEHOLE_URL` | `http://localhost:5010` | URL of the mousehole instance |
+| `QBT_HOST` | `localhost` | qBittorrent WebUI hostname or IP |
+| `QBT_PORT` | `8080` | qBittorrent WebUI port |
+| `QBT_USERNAME` | `admin` | qBittorrent login username |
+| `QBT_PASSWORD` | _(empty)_ | qBittorrent login password |
+| `QBT_CATEGORY` | `mam` | Category applied to added torrents |
+| `QBT_SEED_RATIO` | `1.0` | Seed ratio limit (`-1` for unlimited) |
+
+> These values are used as **defaults** when the discovery settings are first created. After that, the values saved in the ABS database take precedence and can be changed through the settings UI without restarting the container.

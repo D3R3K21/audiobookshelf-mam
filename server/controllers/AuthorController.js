@@ -419,6 +419,23 @@ class AuthorController {
   }
 
   /**
+   * PATCH: /api/authors/:id/discovery-override
+   * Body: { discoveryOverride: true | false | null }
+   *
+   * @param {AuthorControllerRequest} req
+   * @param {Response} res
+   */
+  async updateDiscoveryOverride(req, res) {
+    const value = req.body.discoveryOverride
+    if (value !== true && value !== false && value !== null) {
+      return res.status(400).send('discoveryOverride must be true, false, or null')
+    }
+    req.author.discoveryOverride = value
+    await req.author.save()
+    res.json({ id: req.author.id, discoveryOverride: req.author.discoveryOverride })
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res

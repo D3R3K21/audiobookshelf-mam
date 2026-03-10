@@ -33,6 +33,7 @@ const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
+const DiscoveryController = require('../controllers/DiscoveryController')
 const StatsController = require('../controllers/StatsController')
 const ApiKeyController = require('../controllers/ApiKeyController')
 
@@ -216,12 +217,14 @@ class ApiRouter {
     this.router.get('/authors/:id/image', AuthorController.getImage.bind(this))
     this.router.post('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.uploadImage.bind(this))
     this.router.delete('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.deleteImage.bind(this))
+    this.router.patch('/authors/:id/discovery-override', AuthorController.middleware.bind(this), AuthorController.updateDiscoveryOverride.bind(this))
 
     //
     // Series Routes
     //
     this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
     this.router.patch('/series/:id', SeriesController.middleware.bind(this), SeriesController.update.bind(this))
+    this.router.patch('/series/:id/discovery-override', SeriesController.middleware.bind(this), SeriesController.updateDiscoveryOverride.bind(this))
 
     //
     // Playback Session Routes
@@ -334,6 +337,21 @@ class ApiRouter {
     this.router.post('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.create.bind(this))
     this.router.patch('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.update.bind(this))
     this.router.delete('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.delete.bind(this))
+
+    //
+    // Discovery Routes
+    //
+    this.router.get('/discovery', DiscoveryController.getAllDiscovery.bind(this))
+    this.router.get('/discovery/authors/:authorId', DiscoveryController.getAuthorDiscovery.bind(this))
+    this.router.get('/discovery/series/:seriesId', DiscoveryController.getSeriesDiscovery.bind(this))
+    this.router.post('/discovery/mam-search', DiscoveryController.mamSearch.bind(this))
+    this.router.post('/discovery/download', DiscoveryController.initiateDownload.bind(this))
+    this.router.get('/discovery/tracked-authors', DiscoveryController.getTrackedAuthors.bind(this))
+    this.router.patch('/discovery/tracked-authors', DiscoveryController.updateTrackedAuthors.bind(this))
+    this.router.get('/settings/discovery', DiscoveryController.getDiscoverySettings.bind(this))
+    this.router.patch('/settings/discovery', DiscoveryController.updateDiscoverySettings.bind(this))
+    this.router.post('/settings/discovery/test-mam', DiscoveryController.testMAMConnection.bind(this))
+    this.router.post('/settings/discovery/test-qbt', DiscoveryController.testQBTConnection.bind(this))
 
     //
     // Misc Routes

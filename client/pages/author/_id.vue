@@ -40,7 +40,32 @@
           <p class="text-white/40 text-base px-2">{{ $strings.LabelSeries }}</p>
         </widgets-item-slider>
       </div>
+
+      <!-- Discovery section -->
+      <div v-if="discoveryEnabled && discoveredBooks.length" class="py-4">
+        <div class="flex items-center gap-3 mb-3">
+          <h2 class="text-lg">{{ discoveredBooks.length }} Missing Book{{ discoveredBooks.length !== 1 ? 's' : '' }}</h2>
+          <span class="material-symbols text-base text-blue-300">cloud_download</span>
+          <span class="text-white/40 text-sm">Not yet in your library</span>
+          <div class="grow" />
+          <button v-if="userCanUpdate" class="text-xs text-white/40 hover:text-white border border-white/20 rounded px-2 py-0.5" @click="toggleDiscovery">
+            Discovery: {{ author.discoveryOverride === false ? 'Off' : 'On' }}
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <cards-discovered-book-card
+            v-for="book in discoveredBooks"
+            :key="book.asin || book.title"
+            :book="{ ...book, authors: [{ name: author.name }] }"
+            :card-width="120"
+            :cover-height="180"
+            @click="openMAMSearch"
+          />
+        </div>
+      </div>
     </div>
+
+    <modals-m-a-m-search-modal v-model="showMAMModal" :book="selectedBook" />
   </div>
 </template>
 
@@ -67,7 +92,11 @@ export default {
   data() {
     return {
       isDescriptionClamped: false,
-      showFullDescription: false
+      showFullDescription: false,
+      discoveredBooks: [],
+      discoveryEnabled: false,
+      showMAMModal: false,
+      selectedBook: null
     }
   },
   computed: {
@@ -95,6 +124,28 @@ export default {
     editAuthor() {
       this.$store.commit('globals/showEditAuthorModal', this.author)
     },
+    async loadDiscovery() {
+      const data = await this.$axios.$get(`/api/discovery/authors/${this.author.id}`).catch(() => null)
+      if (data) {
+        this.discoveryEnabled = data.enabled !== false
+        this.discoveredBooks = data.discoveredBooks || []
+      }
+    },
+    openMAMSearch(book) {
+      this.selectedBook = book
+      this.showMAMModal = true
+    },
+    async toggleDiscovery() {
+      const current = this.author.discoveryOverride
+      const newValue = current === false ? null : false
+      await this.$axios.$patch(`/api/authors/${this.author.id}/discovery-override`, { discoveryOverride: newValue }).catch(() => null)
+      this.author = { ...this.author, discoveryOverride: newValue }
+      if (newValue !== false) {
+        this.loadDiscovery()
+      } else {
+        this.discoveredBooks = []
+      }
+    },
     authorUpdated(author) {
       if (author.id === this.author.id) {
         console.log('Author was updated', author)
@@ -116,6 +167,7 @@ export default {
   mounted() {
     if (!this.author) this.$router.replace('/')
     this.checkDescriptionClamped()
+    this.loadDiscovery()
 
     this.$root.socket.on('author_updated', this.authorUpdated)
     this.$root.socket.on('author_removed', this.authorRemoved)
