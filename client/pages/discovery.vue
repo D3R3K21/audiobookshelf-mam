@@ -258,7 +258,7 @@ onAuthorSelectionChange(newIds) {
         if (this.selectedLibraryId) {
           const [authData, sData] = await Promise.all([
             this.$axios.$get(`/api/libraries/${this.selectedLibraryId}/authors`).catch(() => null),
-            this.$axios.$get(`/api/libraries/${this.selectedLibraryId}/series`).catch(() => null)
+            this.$axios.$get(`/api/libraries/${this.selectedLibraryId}/series`, { params: { limit: 5000, minified: 1 } }).catch(() => null)
           ])
           this.allAuthors = (authData?.authors || []).sort((a, b) => a.name.localeCompare(b.name))
           this.allSeries = ((sData?.results || []).map((s) => ({ id: s.id, name: s.name }))).sort((a, b) => a.name.localeCompare(b.name))
