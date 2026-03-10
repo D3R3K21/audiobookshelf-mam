@@ -473,6 +473,16 @@ This fork adds an audiobook discovery system that surfaces books missing from yo
 - **Audible catalog metadata** — missing books are sourced from the Audible catalog API (`api.audible.com/1.0/catalog/products`), filtered to unabridged English editions only.
 - **Discovery settings page** (`/config/discovery`) — configure Mousehole URL, qBittorrent connection, seed ratio, and category. Includes connection test buttons for both MAM and qBittorrent.
 
+## Screenshots
+
+**Author discovery** — ghost cards for books not yet in your library appear on the author page:
+
+![Author discovery](docs/author-discovery.png)
+
+**Series discovery** — missing books strip above the series bookshelf with the Rescan & Match button:
+
+![Series discovery](docs/series-discovery.png)
+
 ## Prerequisites
 
 | Service | Purpose |
@@ -486,8 +496,8 @@ This fork adds an audiobook discovery system that surfaces books missing from yo
 ### 1. Build the image
 
 ```bash
-git clone <this-repo>
-cd audiobookshelf
+git clone https://github.com/D3R3K21/audiobookshelf-mam.git
+cd audiobookshelf-mam
 docker build -t audiobookshelf-dev:latest .
 ```
 

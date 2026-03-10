@@ -78,8 +78,15 @@ class CacheManager {
       return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
 
-    var readStream = fs.createReadStream(writtenFile)
-    readStream.pipe(res)
+    const readStream = fs.createReadStream(writtenFile)
+    const ps = new stream.PassThrough()
+    stream.pipeline(readStream, ps, (err) => {
+      if (err) {
+        Logger.error(`[CacheManager] handleCoverCache stream error for "${writtenFile}"`, err)
+        if (!res.headersSent) res.sendStatus(500)
+      }
+    })
+    ps.pipe(res)
   }
 
   purgeCoverCache(libraryItemId) {
@@ -174,8 +181,15 @@ class CacheManager {
     let writtenFile = await resizeImage(author.imagePath, cachePath, width, height)
     if (!writtenFile) return res.sendStatus(500)
 
-    var readStream = fs.createReadStream(writtenFile)
-    readStream.pipe(res)
+    const readStream = fs.createReadStream(writtenFile)
+    const ps = new stream.PassThrough()
+    stream.pipeline(readStream, ps, (err) => {
+      if (err) {
+        Logger.error(`[CacheManager] handleAuthorCache stream error for "${writtenFile}"`, err)
+        if (!res.headersSent) res.sendStatus(500)
+      }
+    })
+    ps.pipe(res)
   }
 }
 module.exports = new CacheManager()
